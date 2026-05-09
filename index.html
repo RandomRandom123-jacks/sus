@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AbsenSI — Sistem Absensi Sekolah</title>
+  <meta name="description" content="Sistem absensi digital untuk sekolah. Input nama, NIS, tanggal, dan jam secara mudah."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<!-- ===== LOGIN SCREEN ===== -->
+<div class="overlay open" id="login-screen">
+  <div class="modal login-modal">
+    <div class="login-logo">📋</div>
+    <h1 class="login-title">AbsenSI</h1>
+    <p class="login-sub">Sistem Absensi Digital Sekolah</p>
+    <form id="login-form">
+      <div class="fg">
+        <label>Username Guru</label>
+        <input id="l-user" type="text" placeholder="Masukkan username" autocomplete="username" required/>
+      </div>
+      <div class="fg">
+        <label>Password</label>
+        <input id="l-pass" type="password" placeholder="Masukkan password" autocomplete="current-password" required/>
+      </div>
+      <div class="login-error" id="login-error"></div>
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:12px" id="login-btn">Masuk →</button>
+    </form>
+    <p class="login-hint">Default: <code>admin</code> / <code>admin123</code></p>
+  </div>
+</div>
+
+<!-- ===== ADD ABSENCE MODAL ===== -->
+<div class="overlay" id="add-modal">
+  <div class="modal" id="add-modal-box">
+    <button class="modal-x" id="add-close">✕</button>
+    <h2>📝 Catat Absensi</h2>
+    <p class="modal-sub" id="add-modal-class-label">Pilih kelas terlebih dahulu</p>
+    <form id="add-form">
+      <div class="fg">
+        <label>Kelas *</label>
+        <select id="f-class" required><option value="">— Pilih Kelas —</option></select>
+      </div>
+      <div class="frow">
+        <div class="fg">
+          <label>Nama Lengkap *</label>
+          <input id="f-name" type="text" placeholder="Contoh: Budi Santoso" pattern="[A-Za-z\u00C0-\u024F\s'.]+" title="Nama hanya boleh berisi huruf dan spasi" required/>
+        </div>
+        <div class="fg">
+          <label>NIS *</label>
+          <input id="f-nis" type="text" inputmode="numeric" pattern="[0-9]+" minlength="4" maxlength="15" placeholder="Contoh: 2024001" title="NIS hanya boleh berisi angka" required/>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fg">
+          <label>Tanggal *</label>
+          <input id="f-date" type="date" required/>
+        </div>
+        <div class="fg">
+          <label>Jam *</label>
+          <input id="f-time" type="time" required/>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Status *</label>
+        <div class="status-pills" id="status-pills">
+          <button type="button" class="spill active" data-status="Sakit">🤒 Sakit</button>
+          <button type="button" class="spill" data-status="Izin">✋ Izin</button>
+          <button type="button" class="spill" data-status="Alpa">❌ Alpa</button>
+          <button type="button" class="spill" data-status="Terlambat">⏰ Terlambat</button>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Keterangan (opsional)</label>
+        <textarea id="f-note" rows="2" placeholder="Alasan atau catatan tambahan…"></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" id="add-cancel">Batal</button>
+        <button type="submit" class="btn btn-primary">✓ Simpan Absensi</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== DELETE CONFIRM MODAL ===== -->
+<div class="overlay" id="del-modal">
+  <div class="modal modal-sm">
+    <div style="font-size:2.5rem;text-align:center;margin-bottom:12px">🗑️</div>
+    <h2 style="text-align:center">Hapus Data?</h2>
+    <p style="text-align:center;color:#6e6e73;margin-bottom:24px">Data absensi ini akan dihapus permanen. Tindakan tidak bisa dibatalkan.</p>
+    <div class="form-actions">
+      <button class="btn btn-ghost" id="del-cancel">Batal</button>
+      <button class="btn btn-danger" id="del-confirm">Ya, Hapus</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SETTINGS MODAL ===== -->
+<div class="overlay" id="cfg-modal">
+  <div class="modal">
+    <button class="modal-x" id="cfg-close">✕</button>
+    <div style="font-size:2rem;margin-bottom:10px">⚙️</div>
+    <h2>Pengaturan GitHub</h2>
+    <p class="modal-sub">Simpan data absensi ke GitHub Gist agar bisa diakses dari perangkat manapun.</p>
+
+    <div class="cfg-steps">
+      <div class="cfg-step"><span>1</span>Buat Personal Access Token (PAT) di <a href="https://github.com/settings/tokens/new?scopes=gist" target="_blank">github.com/settings/tokens</a> — centang scope <strong>gist</strong></div>
+      <div class="cfg-step"><span>2</span>Tempel token di bawah, lalu klik <strong>Hubungkan</strong></div>
+      <div class="cfg-step"><span>3</span>Gist baru akan dibuat otomatis sebagai database absensi kamu</div>
+    </div>
+
+    <div class="fg">
+      <label>GitHub Personal Access Token</label>
+      <input type="password" id="cfg-pat" placeholder="ghp_xxxxxxxxxxxx"/>
+    </div>
+    <div class="fg">
+      <label>Gist ID <small style="color:#86868b">(kosongkan untuk buat baru)</small></label>
+      <input type="text" id="cfg-gist" placeholder="abc123def456"/>
+    </div>
+    <div class="gh-status" id="gh-status"></div>
+    <hr style="border:none;border-top:1px solid rgba(0,0,0,.08);margin:20px 0">
+    <h3 style="font-size:.95rem;font-weight:700;margin-bottom:14px">👨‍🏫 Kelola Akun Guru</h3>
+    <div id="teacher-list" style="margin-bottom:14px"></div>
+    <div class="frow">
+      <div class="fg"><label>Username Baru</label><input type="text" id="new-user" placeholder="username"/></div>
+      <div class="fg"><label>Password Baru</label><input type="password" id="new-pass" placeholder="password"/></div>
+    </div>
+    <button class="btn btn-ghost btn-sm" id="add-teacher-btn" style="margin-bottom:16px">+ Tambah Guru</button>
+    <div class="form-actions">
+      <button class="btn btn-ghost" id="cfg-cancel">Batal</button>
+      <button class="btn btn-primary" id="cfg-save">🔗 Hubungkan GitHub</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div id="toast"></div>
+
+<!-- ===== NAV ===== -->
+<nav id="nav">
+  <div class="nav-inner">
+    <div class="nav-brand">
+      <span class="nav-icon">📋</span>
+      <span class="nav-title">AbsenSI</span>
+    </div>
+    <div class="nav-tabs">
+      <button class="ntab active" data-view="dashboard" id="tab-dashboard">Dashboard</button>
+      <button class="ntab" data-view="records" id="tab-records">Riwayat</button>
+      <button class="ntab" data-view="export" id="tab-export">Export</button>
+    </div>
+    <div class="nav-right">
+      <div class="gh-indicator" id="gh-indicator" title="Status GitHub Gist"></div>
+      <button class="nav-cfg-btn" id="open-cfg" title="Pengaturan GitHub">⚙️</button>
+      <button class="btn btn-ghost btn-sm" id="logout-btn">🚪 Keluar</button>
+      <button class="btn btn-primary btn-sm" id="nav-add-btn">+ Catat Absen</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ===== MAIN ===== -->
+<main id="main">
+
+  <!-- ── DASHBOARD VIEW ── -->
+  <div class="view active" id="view-dashboard">
+    <div class="view-header">
+      <div>
+        <h1 id="dash-title">Dashboard Absensi</h1>
+        <p id="dash-date" class="view-sub"></p>
+      </div>
+      <button class="btn btn-primary" id="dash-add-btn">+ Catat Absen</button>
+    </div>
+
+    <!-- Stat cards -->
+    <div class="stat-row" id="stat-row">
+      <div class="stat-card"><div class="stat-n" id="s-today">0</div><div class="stat-l">Absen Hari Ini</div></div>
+      <div class="stat-card"><div class="stat-n" id="s-month">0</div><div class="stat-l">Bulan Ini</div></div>
+      <div class="stat-card"><div class="stat-n" id="s-total">0</div><div class="stat-l">Total Semua</div></div>
+      <div class="stat-card"><div class="stat-n" id="s-classes">36</div><div class="stat-l">Total Kelas</div></div>
+    </div>
+
+    <!-- Class grid -->
+    <h2 class="section-heading">Pilih Kelas</h2>
+    <div class="grade-section">
+      <div class="grade-label">Kelas X</div>
+      <div class="class-grid" id="grid-x"></div>
+    </div>
+    <div class="grade-section">
+      <div class="grade-label">Kelas XI</div>
+      <div class="class-grid" id="grid-xi"></div>
+    </div>
+    <div class="grade-section">
+      <div class="grade-label">Kelas XII</div>
+      <div class="class-grid" id="grid-xii"></div>
+    </div>
+
+    <!-- Today's absences -->
+    <h2 class="section-heading">Absensi Hari Ini</h2>
+    <div id="today-list"></div>
+  </div>
+
+  <!-- ── RECORDS VIEW ── -->
+  <div class="view" id="view-records">
+    <div class="view-header">
+      <div>
+        <h1>Riwayat Absensi</h1>
+        <p class="view-sub">Semua catatan absensi</p>
+      </div>
+      <button class="btn btn-primary" id="rec-add-btn">+ Catat Absen</button>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-bar">
+      <input type="text" id="f-search" placeholder="🔍 Cari nama atau NIS…" class="filter-input"/>
+      <select id="f-class-filter" class="filter-select"><option value="">Semua Kelas</option></select>
+      <select id="f-status-filter" class="filter-select">
+        <option value="">Semua Status</option>
+        <option>Sakit</option><option>Izin</option><option>Alpa</option><option>Terlambat</option>
+      </select>
+      <input type="date" id="f-date-from" class="filter-input" title="Dari tanggal"/>
+      <input type="date" id="f-date-to" class="filter-input" title="Sampai tanggal"/>
+      <button class="btn btn-ghost btn-sm" id="f-clear">Reset</button>
+    </div>
+
+    <div id="records-count" class="records-count"></div>
+    <div id="records-table-wrap">
+      <table class="abs-table" id="records-table">
+        <thead>
+          <tr>
+            <th>Kelas</th><th>Nama</th><th>NIS</th>
+            <th>Tanggal</th><th>Jam</th><th>Status</th><th>Keterangan</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="records-body"></tbody>
+      </table>
+      <div id="records-empty" class="empty-state" style="display:none">
+        <div>📭</div><h3>Belum ada data</h3><p>Belum ada catatan absensi yang sesuai filter.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── EXPORT VIEW ── -->
+  <div class="view" id="view-export">
+    <div class="view-header">
+      <div><h1>Export Data</h1><p class="view-sub">Download atau cetak rekap absensi</p></div>
+    </div>
+    <div class="export-grid">
+      <div class="export-card" id="exp-csv">
+        <div class="exp-icon">📊</div>
+        <h3>Export CSV</h3>
+        <p>Download semua data absensi dalam format spreadsheet (.csv) yang bisa dibuka di Excel.</p>
+        <div class="fg" style="margin-top:16px">
+          <label>Filter Kelas (opsional)</label>
+          <select id="exp-class"><option value="">Semua Kelas</option></select>
+        </div>
+        <button class="btn btn-primary" style="margin-top:12px;width:100%" id="do-csv">⬇ Download CSV</button>
+      </div>
+      <div class="export-card" id="exp-print">
+        <div class="exp-icon">🖨️</div>
+        <h3>Cetak Rekap</h3>
+        <p>Cetak daftar absensi dalam format tabel yang rapi, siap untuk arsip fisik.</p>
+        <div class="fg" style="margin-top:16px">
+          <label>Pilih Kelas</label>
+          <select id="print-class"><option value="">Semua Kelas</option></select>
+        </div>
+        <div class="fg">
+          <label>Tanggal</label>
+          <input type="date" id="print-date"/>
+        </div>
+        <button class="btn btn-primary" style="margin-top:12px;width:100%" id="do-print">🖨 Cetak Sekarang</button>
+      </div>
+      <div class="export-card">
+        <div class="exp-icon">☁️</div>
+        <h3>Sync GitHub Gist</h3>
+        <p>Simpan semua data absensi ke GitHub Gist sebagai backup cloud. Bisa diakses dari perangkat lain.</p>
+        <div class="gh-status" id="gh-status-export" style="margin-top:16px"></div>
+        <button class="btn btn-primary" style="margin-top:12px;width:100%" id="do-sync">🔄 Sync ke GitHub</button>
+        <button class="btn btn-ghost" style="margin-top:8px;width:100%" id="do-load">⬇ Load dari GitHub</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
